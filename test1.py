@@ -1,28 +1,38 @@
 import csv
 import pandas as pd
+import os
 
 class FiniteStateAutomata:
     def __init__(self):
-        self.state = 'START'
+        self.state = 'Kondisi_awal'
     
     def transition(self, event):
-        if self.state == 'START':
+        print(f"Pengecekan {self.state} pada {event}")
+        if self.state == 'Kondisi_awal':
             if event == 'semester_ok':
-                self.state = 'SEMESTER_CHECKED'
+                self.state = 'SEMESTER'
             else:
-                self.state = 'REJECTED'
+                self.state = 'DITOLAK'
         
         elif self.state == 'SEMESTER_CHECKED':
-            if event == 'grades_ok':
-                self.state = 'ACCEPTED'
+            if event == 'nilai_ok':
+                self.state = 'DITERIMA'
+            elif event == 'pengecekan_tambahan':
+                self.state = 'Pengecekan Tambahan Diperlukan'
             else:
-                self.state = 'REJECTED'
+                self.state = 'DITOLAK'
+        
+        elif self.state == 'Pengecekan Tambahan Diperlukan':
+            if event == 'nilai_tambahan_ok':
+                self.state = 'DITERIMA'
+            else:
+                self.state = 'DITOLAK'
     
-    def is_accepted(self):
-        return self.state == 'ACCEPTED'
+    def is_DITERIMA(self):
+        return self.state == 'DITERIMA'
     
-    def is_rejected(self):
-        return self.state == 'REJECTED'
+    def is_DITOLAK(self):
+        return self.state == 'DITOLAK'
 
 # Fungsi untuk screening awal mahasiswa dengan konsentrasi RPL
 def screening_mahasiswa(mahasiswa):
@@ -34,7 +44,7 @@ def screening_mahasiswa(mahasiswa):
     else:
         fsa.transition('semester_not_ok')
     
-    if fsa.is_rejected():
+    if fsa.is_DITOLAK():
         return "Mahasiswa ditolak"
     
     # Memproses kondisi nilai mata kuliah
@@ -46,24 +56,37 @@ def screening_mahasiswa(mahasiswa):
     ]
     
     # Menghitung jumlah mata kuliah dengan nilai B atau lebih baik
-    accepted_grades = ['A', 'B']
-    count_accepted_grades = sum(1 for grade in relevant_courses if grade in accepted_grades)
+    DITERIMA_grades = ['A', 'B']
+    count_DITERIMA_grades = sum(1 for grade in relevant_courses if grade in DITERIMA_grades)
     
-    if count_accepted_grades >= 3:
-        fsa.transition('grades_ok')
+    if count_DITERIMA_grades >= 3:
+        fsa.transition('nilai_ok')
+    elif count_DITERIMA_grades == 2:
+        fsa.transition('pengecekan_tambahan')
+        # Memproses nilai Algoritma dan Pemrograman
+        algoritma_nilai = input("Masukkan nilai Algoritma dan Pemrograman (A/B/C/D/E): ").upper()
+        if algoritma_nilai in DITERIMA_grades:
+            fsa.transition('nilai algoritma dan pemrograman memenuhi')
+        else:
+            fsa.transition('nilai algoritma dan pemrograman tidak memenuhi')
     else:
-        fsa.transition('grades_not_ok')
+        fsa.transition('nilai tidak memenuhi')
     
-    if fsa.is_accepted():
+    if fsa.is_DITERIMA():
         return "Mahasiswa diterima"
     else:
         return "Mahasiswa ditolak"
 
 # Fungsi untuk menyimpan hasil ke dalam file CSV
 def save_to_csv(mahasiswa_list, filename="hasil_screening.csv"):
-    with open(filename, mode='w', newline='') as file:
+    # Memeriksa apakah file sudah ada
+    file_exists = os.path.isfile(filename)
+    
+    with open(filename, mode='a', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(["Nama", "Semester", "PBO", "PW", "RPL", "IMK", "Status"])
+        # Tulis header hanya jika file belum ada
+        if not file_exists:
+            writer.writerow(["Nama", "Semester", "PBO", "PW", "RPL", "IMK", "Status"])
         for mahasiswa in mahasiswa_list:
             writer.writerow([
                 mahasiswa['nama'],
@@ -80,11 +103,43 @@ def get_mahasiswa_input():
     mahasiswa_list = []
     while True:
         nama = input("Masukkan nama mahasiswa: ")
-        semester = int(input("Masukkan semester mahasiswa: "))
-        pbo = input("Masukkan nilai Pemrograman Berbasis Objek (A/B/C/D/E): ").upper()
-        pw = input("Masukkan nilai Pemrograman Web (A/B/C/D/E): ").upper()
-        rpl = input("Masukkan nilai Rekayasa Perangkat Lunak (A/B/C/D/E): ").upper()
-        imk = input("Masukkan nilai Interaksi Manusia dan Komputer (A/B/C/D/E): ").upper()
+        
+        while True:
+            try:
+                semester = int(input("Masukkan semester mahasiswa: "))
+                break
+            except ValueError:
+                print("Input tidak valid. Silakan masukkan angka untuk semester.")
+        
+        valid_grades = ['A', 'B', 'C', 'D', 'E']
+        
+        while True:
+            pbo = input("Masukkan nilai Pemrograman Berbasis Objek (A/B/C/D/E): ").upper()
+            if pbo in valid_grades:
+                break
+            else:
+                print("Input tidak valid. Silakan masukkan nilai yang valid (A/B/C/D/E).")
+        
+        while True:
+            pw = input("Masukkan nilai Pemrograman Web (A/B/C/D/E): ").upper()
+            if pw in valid_grades:
+                break
+            else:
+                print("Input tidak valid. Silakan masukkan nilai yang valid (A/B/C/D/E).")
+        
+        while True:
+            rpl = input("Masukkan nilai Rekayasa Perangkat Lunak (A/B/C/D/E): ").upper()
+            if rpl in valid_grades:
+                break
+            else:
+                print("Input tidak valid. Silakan masukkan nilai yang valid (A/B/C/D/E).")
+        
+        while True:
+            imk = input("Masukkan nilai Interaksi Manusia dan Komputer (A/B/C/D/E): ").upper()
+            if imk in valid_grades:
+                break
+            else:
+                print("Input tidak valid. Silakan masukkan nilai yang valid (A/B/C/D/E).")
         
         mahasiswa = {
             'nama': nama,
