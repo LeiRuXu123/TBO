@@ -9,13 +9,13 @@ class FiniteStateAutomata:
     def transition(self, event):
         print(f"Pengecekan {self.state} pada {event}")
         if self.state == 'Kondisi_awal':
-            if event == 'semester_ok':
+            if event == 'semester_memenuhi':
                 self.state = 'SEMESTER'
             else:
                 self.state = 'DITOLAK'
         
-        elif self.state == 'SEMESTER_CHECKED':
-            if event == 'nilai_ok':
+        elif self.state == 'SEMESTER_DICEK':
+            if event == 'nilai_memenuhi':
                 self.state = 'DITERIMA'
             elif event == 'pengecekan_tambahan':
                 self.state = 'Pengecekan Tambahan Diperlukan'
@@ -23,7 +23,7 @@ class FiniteStateAutomata:
                 self.state = 'DITOLAK'
         
         elif self.state == 'Pengecekan Tambahan Diperlukan':
-            if event == 'nilai_tambahan_ok':
+            if event == 'nilai_tambahan_memenuhi':
                 self.state = 'DITERIMA'
             else:
                 self.state = 'DITOLAK'
@@ -39,10 +39,10 @@ def screening_mahasiswa(mahasiswa):
     fsa = FiniteStateAutomata()
     
     # Memproses kondisi semester
-    if mahasiswa['semester'] >= 5:
-        fsa.transition('semester_ok')
+    if mahasiswa['semester'] == 5:
+        fsa.transition('semester_memenuhi')
     else:
-        fsa.transition('semester_not_ok')
+        fsa.transition('semester_tidak_memenuhi')
     
     if fsa.is_DITOLAK():
         return "Mahasiswa ditolak"
@@ -60,7 +60,7 @@ def screening_mahasiswa(mahasiswa):
     count_DITERIMA_grades = sum(1 for grade in relevant_courses if grade in DITERIMA_grades)
     
     if count_DITERIMA_grades >= 3:
-        fsa.transition('nilai_ok')
+        fsa.transition('nilai_memenuhi')
     elif count_DITERIMA_grades == 2:
         fsa.transition('pengecekan_tambahan')
         # Memproses nilai Algoritma dan Pemrograman
